@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Button, StyleSheet, Text, View, Switch } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import {
     createNativeStackNavigator,
@@ -11,6 +11,25 @@ export type SimpleStackParams = {
     Home: undefined;
     Details: undefined;
 };
+
+function HomeScreen({
+    navigation,
+}: NativeStackScreenProps<SimpleStackParams, "Home">) {
+    return (
+        <View
+            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+            <Clock />
+            <Counter />
+            <Button
+                title="Details..."
+                onPress={() => {
+                    navigation.navigate("Details");
+                }}
+            />
+        </View>
+    );
+}
 
 function Clock() {
     const [time, setTime] = useState(getTime());
@@ -27,19 +46,35 @@ function getTime() {
     return new Date().toISOString();
 }
 
-function HomeScreen({
-    navigation,
-}: NativeStackScreenProps<SimpleStackParams, "Home">) {
+function Counter() {
+    const [byTwo, setByTwo] = useState(false);
+    const [counter, setCounter] = useState(0);
+    const onChange = () => {
+        setCounter(0);
+        setByTwo(!byTwo);
+    };
+    const changeCounter = (negative: boolean) => {
+        return () => {
+            const modification = (byTwo ? 2 : 1) * (negative ? -1 : 1);
+            setCounter(counter + modification);
+        };
+    };
+    const desc = changeCounter(true);
+    const inc = changeCounter(false);
+
     return (
-        <View
-            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
-        >
-            <Clock />
-            <Button
-                title="Details..."
-                onPress={() => {
-                    navigation.navigate("Details");
-                }}
+        <View>
+            <View>
+                <Button title="-" onPress={desc} />
+                <Text>{counter}</Text>
+                <Button title="+" onPress={inc} />
+            </View>
+            <Switch
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={byTwo ? "#f5dd4b" : "#f4f3f4"}
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={onChange}
+                value={byTwo}
             />
         </View>
     );

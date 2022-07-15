@@ -5,11 +5,27 @@ import {
     createNativeStackNavigator,
     NativeStackScreenProps,
 } from "@react-navigation/native-stack";
+import { useEffect, useState } from "react";
 
 export type SimpleStackParams = {
     Home: undefined;
     Details: undefined;
 };
+
+function Clock() {
+    const [time, setTime] = useState(getTime());
+    useEffect(() => {
+        setTimeout(() => {
+            setTime(getTime());
+        }, 1000);
+    });
+
+    return <Text style={{ fontWeight: "bold", fontSize: 20 }}>{time}</Text>;
+}
+
+function getTime() {
+    return new Date().toISOString();
+}
 
 function HomeScreen({
     navigation,
@@ -18,7 +34,7 @@ function HomeScreen({
         <View
             style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
-            <Text>Home Screen</Text>
+            <Clock />
             <Button
                 title="Details..."
                 onPress={() => {

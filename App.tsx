@@ -84,19 +84,20 @@ function Counter() {
     const desc = changeCounter(true);
     const inc = changeCounter(false);
     return (
-        <View>
-            <View>
+        <View
+            style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "row",
+            }}
+        >
+            <View style={{ flexDirection: "row" }}>
                 <Button title="-" onPress={desc} />
                 <Text>{counter}</Text>
                 <Button title="+" onPress={inc} />
             </View>
-            <Switch
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor={byTwo ? "#f5dd4b" : "#f4f3f4"}
-                ios_backgroundColor="#3e3e3e"
-                onValueChange={onChange}
-                value={byTwo}
-            />
+            <Switch onValueChange={onChange} value={byTwo} />
         </View>
     );
 }

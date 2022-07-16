@@ -7,6 +7,8 @@ import {
 import { useEffect, useState } from "react";
 import { VictoryBar, VictoryChart, VictoryTheme } from "victory-native";
 import axios from "axios";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const API_URL = "https://api.spacexdata.com/v3/launches";
 
@@ -40,21 +42,13 @@ interface SpaceXRequestLaunch {
     };
 }
 
-function HomeScreen({
-    navigation,
-}: NativeStackScreenProps<SimpleStackParams, "Home">) {
+function HomeScreen() {
     return (
         <View
             style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
             <Clock />
             <Counter />
-            <Button
-                title="Graph..."
-                onPress={() => {
-                    navigation.navigate("Graph");
-                }}
-            />
         </View>
     );
 }
@@ -177,14 +171,35 @@ function parseResponse(response: SpaceXRequestLaunches) {
 }
 
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 export default function App() {
     return (
         <NavigationContainer>
-            <Stack.Navigator initialRouteName="Home">
-                <Stack.Screen name="Home" component={HomeScreen} />
-                <Stack.Screen name="Graph" component={GraphScreen} />
-            </Stack.Navigator>
+            <Tab.Navigator
+                screenOptions={({ route }) => ({
+                    tabBarIcon: ({ focused, color, size }) => {
+                        let iconName;
+
+                        if (route.name == "Home") {
+                            iconName = "home-outline";
+                        } else if (route.name == "Graph") {
+                            iconName = "stats-chart-outline";
+                        }
+
+                        return (
+                            <Ionicons
+                                name={iconName}
+                                size={size}
+                                color={color}
+                            />
+                        );
+                    },
+                })}
+            >
+                <Tab.Screen name="Home" component={HomeScreen} />
+                <Tab.Screen name="Graph" component={GraphScreen} />
+            </Tab.Navigator>
         </NavigationContainer>
     );
 }

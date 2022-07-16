@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, View, Switch } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import {
@@ -6,11 +5,40 @@ import {
     NativeStackScreenProps,
 } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
+import { VictoryBar, VictoryChart, VictoryTheme } from "victory-native";
+import axios from "axios";
+
+const API_URL = "https://api.spacexdata.com/v3/launches";
 
 export type SimpleStackParams = {
     Home: undefined;
-    Details: undefined;
+    Graph: undefined;
 };
+
+type Data = DataPoint[];
+interface DataPoint {
+    time: number;
+    lbs: number;
+    kg: number;
+}
+type Points = Point[];
+interface Point {
+    time: number;
+    weight: number;
+}
+
+type SpaceXRequestLaunches = SpaceXRequestLaunch[];
+interface SpaceXRequestLaunch {
+    launch_date_unix: number;
+    rocket: {
+        second_stage: {
+            payloads: {
+                payload_mass_kg: number;
+                payload_mass_lbs: number;
+            }[];
+        };
+    };
+}
 
 function HomeScreen({
     navigation,
@@ -22,9 +50,9 @@ function HomeScreen({
             <Clock />
             <Counter />
             <Button
-                title="Details..."
+                title="Graph..."
                 onPress={() => {
-                    navigation.navigate("Details");
+                    navigation.navigate("Graph");
                 }}
             />
         </View>
@@ -43,7 +71,7 @@ function Clock() {
 }
 
 function getTime() {
-    return new Date().toISOString();
+    return new Date().toUTCString();
 }
 
 function Counter() {
@@ -61,7 +89,6 @@ function Counter() {
     };
     const desc = changeCounter(true);
     const inc = changeCounter(false);
-
     return (
         <View>
             <View>
@@ -80,14 +107,73 @@ function Counter() {
     );
 }
 
-function DetailsScreen() {
+function GraphScreen() {
+    const [data, setData] = useState<Data>([]);
+    const [points, setPoints] = useState<Points>([]);
+    const [inLBS, setInLBS] = useState(false);
+
+    const updatePoints = (d: Data, lbs: boolean) => {
+        setPoints(
+            d.map((item) => ({
+                time: item.time,
+                weight: lbs ? item.lbs : item.kg,
+            })),
+        );
+    };
+
+    useEffect(() => {
+        axios
+            .get(API_URL)
+            .then((res) => res.data)
+            .then((response: SpaceXRequestLaunches) => {
+                const data = parseResponse(response);
+                setData(data);
+                updatePoints(data, false);
+            })
+            .catch((e) => {
+                console.error(e);
+            });
+    }, []);
+
     return (
         <View
             style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
-            <Text>Details Screen</Text>
+            <Text style={{ textAlign: "center" }}>
+                Pulls launch data from SpaceX's API. Shows payload weight over
+                time, toggle will switch between LBS and KG.
+            </Text>
+            <VictoryChart width={350} theme={VictoryTheme.material}>
+                <VictoryBar data={points} x="time" y="weight" />
+            </VictoryChart>
+            <Switch
+                onValueChange={(value) => {
+                    setInLBS(value);
+                    updatePoints(data, value);
+                }}
+                value={inLBS}
+            />
         </View>
     );
+}
+
+function parseResponse(response: SpaceXRequestLaunches) {
+    const data: Data = [];
+    for (const launch of response) {
+        const time = launch.launch_date_unix;
+        let kg = 0;
+        let lbs = 0;
+        for (const payload of launch.rocket.second_stage.payloads) {
+            if (payload.payload_mass_kg == null) {
+                continue;
+            }
+            kg += payload.payload_mass_kg;
+            lbs += payload.payload_mass_lbs;
+        }
+        const point: DataPoint = { time, kg, lbs };
+        data.push(point);
+    }
+    return data;
 }
 
 const Stack = createNativeStackNavigator();
@@ -97,17 +183,8 @@ export default function App() {
         <NavigationContainer>
             <Stack.Navigator initialRouteName="Home">
                 <Stack.Screen name="Home" component={HomeScreen} />
-                <Stack.Screen name="Details" component={DetailsScreen} />
+                <Stack.Screen name="Graph" component={GraphScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-});
